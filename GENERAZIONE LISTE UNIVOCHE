@@ -1,0 +1,69 @@
+import pandas as pd
+from pathlib import Path
+
+#SCRIPT PER IDENTIFICARE PROTEINE/GENI SPECIFICI DI CIASCUNA LISTA
+#GENERA N FILE ***.txt CON PROTEINE UNICHE DI CIASCUNA LISTA
+
+def load_list(file_path):
+    """
+    Carica una lista da txt (anche stile .rnk) o xlsx e ritorna come dict {gene: score}
+    Se non c'è score, usa 0 come valore di default.
+    """
+    p = Path(file_path)
+    gene_score = {}
+    if p.suffix.lower() in ['.txt']:
+        lines = [l.strip() for l in p.read_text(encoding='utf-8').splitlines() if l.strip()]
+        for l in lines:
+            parts = l.split()
+            gene = parts[0].upper()
+            score = float(parts[1]) if len(parts) > 1 else 0
+            gene_score[gene] = score
+    elif p.suffix.lower() in ['.xls', '.xlsx']:
+        df = pd.read_excel(p, header=None)
+        for _, row in df.iterrows():
+            gene = str(row[0]).strip().upper()
+            if not gene:
+                continue
+            score = float(row[1]) if len(row) > 1 and pd.notnull(row[1]) else 0
+            gene_score[gene] = score
+    else:
+        raise ValueError("Formato non supportato. Usa .txt o .xlsx")
+    return gene_score
+
+def main():
+    import tkinter as tk
+    from tkinter import filedialog
+
+    # dialog per selezionare i file
+    root = tk.Tk()
+    root.withdraw()
+    file_paths = filedialog.askopenfilenames(title="Seleziona le liste di proteine (.txt o .xlsx)",
+                                             filetypes=[("Text files", "*.txt"), ("Excel files", "*.xlsx *.xls")])
+    if not file_paths:
+        print("Nessun file selezionato. Esco.")
+        return
+
+    # carico tutte le liste come dict {gene: score}
+    lists = [load_list(f) for f in file_paths]
+
+    # directory di output (qui: stessa cartella dello script)
+    out_dir = Path().resolve()
+
+    # calcolo specifici per ogni lista
+    for i, l_dict in enumerate(lists):
+        other_dicts = lists[:i] + lists[i+1:]
+        other_genes = set().union(*[set(d.keys()) for d in other_dicts])
+        specific = {g: s for g, s in l_dict.items() if g not in other_genes}
+
+        # ordina per score decrescente
+        specific_sorted = sorted(specific.items(), key=lambda x: -x[1])
+
+        # salva lista specifica
+        out_file = out_dir / f"{Path(file_paths[i]).stem}_specific.txt"
+        with open(out_file, 'w', encoding='utf-8') as f:
+            for g, s in specific_sorted:
+                f.write(f"{g}\t{s}\n")
+        print(f"Lista specifica salvata in: {out_file} ({len(specific_sorted)} proteine)")
+
+if __name__ == "__main__":
+    main()
