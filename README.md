@@ -103,19 +103,6 @@ Questo set di script è pensato per essere usato passo‑passo:
 
 ---
 
-## Esempio di flusso di lavoro (rapido, interattivo)
-1. Lanciare lo script 1 e selezionare file mass-spec:
-   ```bash
-   python "1 - GENERAZIONE LISTA DA FILE MASS SPEC"
-   ```
-   Salva la lista preranked (es. `samples_preranked.txt`).
-2. Lanciare lo script 2 e selezionare `samples_preranked.txt`:
-   - Otterrai `samples_preranked_filter.txt` e `samples_preranked_filter_out.txt`.
-3. Lanciare lo script 3 e selezionare uno o più file `*_filter.txt` (per confrontare condizioni):
-   - Otterrai file `*_specific.txt` per ciascun input.
-4. Usare gli output del passo 3 come input per ORA (script 4) e per i Venn (script 5).
-
----
 
 ## Suggerimenti pratici
 - Controlla sempre le prime righe del file mass‑spec per capire l'ordine delle colonne e, se necessario, modifica gli indici nello script.  
