@@ -99,10 +99,6 @@ Questo set di script è pensato per essere usato passo‑passo:
 
 ---
 
-- Versione Python raccomandata: 3.8+
-
----
-
 ## Informazioni aggiuntive
 - La lista di contaminanti è inclusa direttamente nello script 2: modificabile per esperimento e specie in esame.  
 - Gli script attualmente sono interattivi (usano dialog di `tkinter`) — è relativamente semplice adattarli per esecuzione da CLI con parametri.
@@ -110,5 +106,5 @@ Questo set di script è pensato per essere usato passo‑passo:
 ---
 
 ## Contatti / Licenza
-- Autore: vedi cronologia commit del repository.  
-- Licenza: aggiungi qui la licenza desiderata (es. MIT) se vuoi distribuire pubblicamente gli script.
+- Autore: Lorenzo Zammariello (account github: LorenzoZam) 
+- Licenza MIT, disponibile nella repository
