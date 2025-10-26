@@ -1,0 +1,73 @@
+import matplotlib.pyplot as plt
+from matplotlib_venn import venn3
+import tkinter as tk
+from tkinter import filedialog, simpledialog
+
+#SCRIPT PER CREARE UN DIAGRAMMA DI VENN DA 3 LISTE DI PROTEINE
+
+def select_files():
+    root = tk.Tk()
+    root.withdraw()
+    file_paths = filedialog.askopenfilenames(
+        title="Seleziona i tre file con le liste di proteine (.txt)",
+        filetypes=[("Text files", "*.txt")]
+    )
+    if len(file_paths) != 3:
+        print("Errore: devi selezionare esattamente 3 file.")
+        return None
+    return list(file_paths)
+
+def read_protein_list(file_path):
+    proteins = set()
+    with open(file_path, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                gene = line.split()[0].upper()  # Prende solo il gene name e lo mette in maiuscolo
+                proteins.add(gene)
+    return proteins
+
+def ask_labels(files):
+    root = tk.Tk()
+    root.withdraw()
+    labels = []
+    for f in files:
+        default = f.split('/')[-1].replace('.txt','')
+        label = simpledialog.askstring("Nome lista", f"Inserisci il nome per la lista:\n{default}", initialvalue=default)
+        if not label:
+            label = default
+        labels.append(label)
+    return labels
+
+def main():
+    files = select_files()
+    if not files:
+        return
+
+    # Legge le liste
+    list1 = read_protein_list(files[0])
+    list2 = read_protein_list(files[1])
+    list3 = read_protein_list(files[2])
+
+    # Chiedi i label all'utente
+    labels = ask_labels(files)
+
+    # Crea il Venn diagram
+    plt.figure(figsize=(5,5))
+    venn = venn3([list1, list2, list3], set_labels=labels, normalize_to=1.3)
+    plt.title("Overlap proteine RNA pull-down", fontsize=14)  # titolo più grande
+
+    # Aumenta la dimensione dei label dei set (A, B, C)
+    for label in venn.set_labels:
+      label.set_fontsize(28)   # esempio: 14 pt
+
+    # Aumenta la dimensione dei numeri dentro i cerchi
+    for label in venn.subset_labels:
+      if label:  # alcune regioni potrebbero essere vuote
+        label.set_fontsize(28)
+
+    plt.tight_layout()
+    plt.show()
+
+if __name__ == "__main__":
+    main()
