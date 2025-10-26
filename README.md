@@ -1,7 +1,10 @@
 ```markdown
 # Pipeline — Analisi Bioinformatica (Script raccolti)
 
-Questo repository raccoglie una serie di script Python utili per processare risultati di Mass Spectrometry e produrre liste pronte per analisi funzionali e visualizzazioni (preranked, filtraggio contaminanti, liste specifiche, ORA/plot e Venn). Di seguito trovi una guida dettagliata per usare gli script presenti e il formato di input/output atteso.
+Questo repository raccoglie una serie di script Python utili per processare
+risultati di Mass Spectrometry e produrre liste pronte per analisi funzionali e
+visualizzazioni (preranked, filtraggio contaminanti, liste specifiche, ORA/plot e Venn).
+Di seguito è mostrata una guida dettagliata per usare gli script presenti e il formato di input/output atteso.
 
 Indice
 - Panoramica
