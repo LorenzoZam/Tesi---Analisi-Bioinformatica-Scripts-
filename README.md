@@ -1,7 +1,6 @@
-```markdown
 # Pipeline — Analisi Bioinformatica (Script raccolti)
 
-Questo repository raccoglie una serie di script Python utili per processare risultati di Mass Spectrometry e generare liste pronte per analisi funzionali e visualizzazioni (preranked, filtraggio contaminanti, liste specifiche, ORA/plot e Venn).  
+Questo repository raccoglie una serie di script Python utili per processare risultati di Mass Spectrometry e generare liste pronte per analisi funzionali e visualizzazioni (preranked, filtraggio conta[...]
 Di seguito trovi una versione ristrutturata e più leggibile della guida all'uso, con i mini-capitoli evidenziati in grassetto e titoli più grandi.
 
 ---
@@ -16,9 +15,6 @@ Di seguito trovi una versione ristrutturata e più leggibile della guida all'uso
   - **4 — ORA su GO + GRAFICO DOTPLOT**
   - **5 — GRAFICO VENN**
 - [Formati input / output](#formati-input--output)
-- [Esempio di flusso di lavoro](#esempio-di-flusso-di-lavoro)
-- [Suggerimenti pratici](#suggerimenti-pratici)
-- [Ambiente consigliato](#ambiente-consigliato)
 - [Contatti / Licenza](#contatti--licenza)
 
 ---
@@ -35,8 +31,8 @@ Questo set di script è pensato per essere usato passo‑passo:
 
 ## Requisiti
 - Python 3.8+  
-- Pacchetti Python principali: `pandas`, `tkinter`  
-- Per plotting / ORA (script 4/5): `gseapy` (e.g., `pip install gseapy`)  
+- Pacchetti Python principali: `pandas`, `tkinter`, `pathlib`, `numpy`
+- Per plotting / ORA (script 4/5): `gseapy`, `matplotlib_venn`, `matplotlib.pyplot`, ``
 - Nota: gli script attuali usano `tkinter` per aprire dialog di selezione file.
 
 ---
