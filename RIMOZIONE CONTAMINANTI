@@ -1,0 +1,140 @@
+import pandas as pd
+from pathlib import Path
+import tkinter as tk
+from tkinter import filedialog
+
+#SCRIPT PER FILTRARE CONTAMINANTI COMUNI DA LISTE DI PROTEINE/GENI
+#GENERA DUE FILE: UNO CON LA LISTA PULITA E UNO CON I CONTAMINANTI RIMOSSI
+
+# Lista di contaminanti comuni
+CONTAMINANTS = [
+    # Actine
+    "ACTA1","ACTA2","ACTB","ACTBL2","ACTC1","ACTG1","ACTG2",
+
+    # Tubuline
+    "TUBA1A","TUBA1B","TUBA1C","TUBA3A","TUBA3B","TUBA4A",
+    "TUBB2A","TUBB2B","TUBB3","TUBB4A","TUBB4B","TUBB5","TUBB6",
+
+    # Miosine / proteine citoscheletriche abbondanti
+    "MYH9","MYH10","MYH11","FLNA","FLNB","VIM","DES","ACTN1","ACTN4","MYL6","NFM",
+
+    # Proteine della mielina (tessuto-corteccia specifiche)
+    "MBP","PLP1","CNP","MOG","MAG","MOBP","OMG",
+
+    # Proteine gliali / marcatori abbondanti nel cervello
+    "GFAP","ALDH1L1","S100B","AQP4",
+
+    # Heat shock proteins / chaperoni (se vuoi essere aggressivo)
+    "HSPA1A","HSPA1B","HSPA5","HSPA8","HSPB1","HSP90AA1","HSP90AB1","HSPD1","HSPA6","HSPA9",
+
+    # Ribosomiali
+    "RPL3","RPL4","RPL5","RPL6","RPL7","RPL8","RPL10","RPL11","RPL12",
+    "RPS3","RPS4X","RPS6","RPLP0","RPLP1","RPLP2",
+
+    # Emoglobine / sangue / plasma
+    "HBA-A1","HBA-A2","HBB-B1","HBB-B2","ALB","TF","TTR",
+
+    # Immunoglobuline / anticorpi (contaminazione da siero o anticorpi usati) (NON PREVISTI NEL NOSTRO ESPERIMENTO)
+    "IGHG1","IGHG2","IGHG3","IGHG4","IGKC","IGLC1","IGLC2",
+
+    # Apolipoproteine / proteine plasmatiche comuni
+    "APOA1","APOA2","APOB","APOE","C3","C4A","C4B",
+
+    # Cheratine (contaminazione ambientale/manipolazione)
+    "KRT1","KRT2","KRT5","KRT6A","KRT6B","KRT7","KRT8","KRT10","KRT14","KRT15","KRT16","KRT17","KRT18","KRT19",
+
+    # Annexins, 14-3-3, CCT/TRiC, VDAC
+    "ANXA1","ANXA2","ANXA3","ANXA4","ANXA5","ANXA6","ANXA7","ANXA11",
+    "YWHAB","YWHAE","YWHAG","YWHAH","YWHAQ","YWHAZ","SFN",
+    "TCP1","CCT2","CCT3","CCT4","CCT5","CCT6A","CCT7","CCT8",
+    "VDAC1","VDAC2","VDAC3",
+
+    # Tripsina / residui enzimatici da digestione
+    "PRSS1","PRSS2","PRSS3"
+]
+
+def load_input(file_path):
+    p = Path(file_path)
+    if p.suffix.lower() in ['.txt']:
+        lines = [l.strip() for l in p.read_text(encoding='utf-8').splitlines() if l.strip()]
+        data = []
+        for l in lines:
+            # Split on tab or whitespace, max 1 split
+            parts = l.split('\t')
+            if len(parts) == 1:
+                parts = l.split(None, 1)
+            gene = parts[0].strip()
+            score = parts[1].strip() if len(parts) > 1 else None
+            data.append((gene, score))
+        return data
+    elif p.suffix.lower() in ['.xls', '.xlsx']:
+        df = pd.read_excel(p, header=None)
+        col0 = df.iloc[:,0].astype(str).str.strip()
+        col1 = df.iloc[:,1].astype(str).str.strip() if df.shape[1] > 1 else pd.Series([None]*len(df))
+        data = list(zip(col0, col1))
+        # Remove empty gene names
+        return [(g, s if s != 'nan' else None) for g, s in data if g and g.lower() != 'nan']
+    else:
+        raise ValueError("Formato non supportato. Usa .txt o .xlsx")
+
+def filter_contaminants(gene_score_list):
+    removed = []
+    kept = []
+    contaminants_upper = [c.upper() for c in CONTAMINANTS]
+    for g, score in gene_score_list:
+        g_clean = g.strip().upper()
+        if g_clean in contaminants_upper:
+            removed.append((g, score))
+        else:
+            kept.append((g, score))
+    return kept, removed
+
+def main():
+    root = tk.Tk()
+    root.withdraw()
+    file_path = filedialog.askopenfilename(
+        title="Seleziona il file con la lista di proteine/gene (.txt o .xlsx)",
+        filetypes=[("Text files", "*.txt"), ("Excel files", "*.xlsx *.xls"), ("All files", "*.*")]
+    )
+    if not file_path:
+        print("Nessun file selezionato. Uscita.")
+        return
+
+    try:
+        gene_score_list = load_input(file_path)
+    except Exception as e:
+        print(f"Errore caricamento file: {e}")
+        return
+
+    kept, removed = filter_contaminants(gene_score_list)
+
+    print("\nProteine/gene rimossi come contaminanti:")
+    for r, score in removed:
+        print(f"{r}\t{score}" if score else r)
+    print(f"\nTotale rimossi: {len(removed)}")
+    print(f"Totale mantenuti: {len(kept)}")
+
+    # salva la lista pulita
+    out_file = Path(file_path).with_name(Path(file_path).stem + "_filter.txt")
+    with open(out_file, 'w', encoding='utf-8') as f:
+        for g, score in kept:
+            g_upper = g.strip().upper()
+            if score and score.lower() != 'nan':
+                f.write(f"{g_upper}\t{score}\n")
+            else:
+                f.write(f"{g_upper}\n")
+
+    # salva la lista dei rimossi
+    out_removed = Path(file_path).with_name(Path(file_path).stem + "_filter_out.txt")
+    with open(out_removed, 'w', encoding='utf-8') as f:
+        for g, score in removed:
+            g_upper = g.strip().upper()
+            if score and score.lower() != 'nan':
+                f.write(f"{g_upper}\t{score}\n")
+            else:
+                f.write(f"{g_upper}\n")
+    print(f"\nLista pulita salvata in: {out_file}")
+    print(f"Lista dei contaminanti rimossi salvata in: {out_removed}")
+
+if __name__ == "__main__":
+    main()
