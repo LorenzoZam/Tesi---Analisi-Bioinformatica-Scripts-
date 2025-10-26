@@ -1,0 +1,109 @@
+import re 
+from collections import defaultdict
+import tkinter as tk
+from tkinter import filedialog
+import math
+import pandas as pd
+
+#SCRIPT PER GENERARE UNA LISTA PRERANKED DA FILE MASS SPEC (txt, csv, xlsx)
+#GENERA FILE STILE ELENCO GIA' RANKATO IN BASE ALOGARITMO DEI MIGLIORI E-VALUE DEI PEPTIDI
+
+def select_file():
+    root = tk.Tk()
+    root.withdraw()
+    file_path = filedialog.askopenfilename(
+        title="Seleziona il file mass spec (.txt, .csv, .xlsx)",
+        filetypes=[
+            ("Supported files", "*.txt *.csv *.xlsx"),
+            ("Text files", "*.txt"),
+            ("CSV files", "*.csv"),
+            ("Excel files", "*.xlsx"),
+            ("All files", "*.*")
+        ]
+    )
+    return file_path
+
+def read_ms_file(file_path):
+    gene_peptide_evalues = defaultdict(lambda: defaultdict(list))
+    current_gene = None
+    current_peptide = None
+
+    if file_path.endswith('.xlsx'):
+        df = pd.read_excel(file_path, header=None)
+    elif file_path.endswith('.csv'):
+        df = pd.read_csv(file_path, header=None)
+    elif file_path.endswith('.txt'):
+        df = pd.read_csv(file_path, sep="\t", header=None)
+    else:
+        raise ValueError("Unsupported file type.")
+
+    for idx, row in df.iterrows():
+        first_col = row[0] if len(row) > 0 else ""
+        peptide_seq = row[2] if len(row) > 2 else None  # Assumendo che la sequenza peptidica sia in colonna 2
+        e_value = row[4] if len(row) > 4 else None
+
+        if all(pd.isnull(x) or (isinstance(x, str) and x.strip() == "") for x in row):
+            continue
+
+        if isinstance(first_col, str) and re.search(r"(tr|sp)\|", first_col.strip()):
+            match = re.search(r"GN=([A-Za-z0-9_-]+)", first_col)
+            current_gene = match.group(1) if match else None
+            continue
+
+        is_empty = (not isinstance(first_col, str) or first_col.strip() == "" or pd.isnull(first_col))
+        if current_gene and is_empty and pd.notnull(e_value) and pd.notnull(peptide_seq):
+            try:
+                if isinstance(e_value, str):
+                    val = float(e_value.replace(",", "."))
+                else:
+                    val = float(e_value)
+                if val > 0:
+                    val = max(val, 1e-12)  # cap minimo
+                    gene_peptide_evalues[current_gene][peptide_seq].append(val)
+            except Exception:
+                continue
+
+    # Per ogni proteina, per ogni peptide, prendi solo il miglior (minore) E-value
+    gene_scores = {}
+    for gene, peptides in gene_peptide_evalues.items():
+        scores = []
+        for pep, evalues in peptides.items():
+            best_evalue = min(evalues)
+            scores.append(-math.log10(best_evalue))
+        if scores:
+            gene_scores[gene] = sum(scores)
+
+    return gene_scores
+
+def save_preranked_file(gene_scores):
+    sorted_genes = sorted(gene_scores.items(), key=lambda x: x[1], reverse=True)
+
+    root = tk.Tk()
+    root.withdraw()
+    save_path = filedialog.asksaveasfilename(
+        title="Salva lista preranked",
+        defaultextension=".txt",
+        filetypes=[
+            ("Text files", "*.txt"),
+            ("CSV files", "*.csv"),
+            ("All files", "*.*")
+        ]
+    )
+    if save_path:
+        with open(save_path, 'w') as f:
+            for gene, score in sorted_genes:
+                f.write(f"{gene}\t{score:.4f}\n")
+        print(f"Lista preranked salvata in: {save_path}")
+
+def main():
+    file_path = select_file()
+    if not file_path:
+        print("Nessun file selezionato.")
+        return
+
+    gene_scores = read_ms_file(file_path)
+    print(f"Proteine totali estratte: {len(gene_scores)}")
+    save_preranked_file(gene_scores)
+
+if __name__ == "__main__":
+    main()
