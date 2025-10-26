@@ -31,8 +31,8 @@ Questo set di script è pensato per essere usato passo‑passo:
 
 ## Requisiti
 - Python 3.8+  
-- Pacchetti Python principali: `pandas`, `tkinter`, `pathlib`, `numpy`
-- Per plotting / ORA (script 4/5): `gseapy`, `matplotlib_venn`, `matplotlib.pyplot`, ``
+- Pacchetti Python principali: `pandas`, `tkinter`, `pathlib`, `numpy` 
+- Per plotting / ORA (script 4/5): `gseapy`, `matplotlib_venn`, `seaborn`
 - Nota: gli script attuali usano `tkinter` per aprire dialog di selezione file.
 
 ---
