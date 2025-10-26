@@ -103,22 +103,6 @@ Questo set di script è pensato per essere usato passo‑passo:
 
 ---
 
-
-## Suggerimenti pratici
-- Controlla sempre le prime righe del file mass‑spec per capire l'ordine delle colonne e, se necessario, modifica gli indici nello script.  
-- Mantieni una copia della lista di contaminanti e adattala alla specie/esperimento.  
-- Usa nomi di file descrittivi (es. `condA_preranked.txt`, `condA_preranked_filter.txt`) per semplificare il tracciamento.  
-- Per grandi dataset, considera di eseguire i passi in ambiente con più RAM e memoria I/O veloce.
-
----
-
-## Ambiente consigliato
-- Creare un virtualenv o usare `conda`:
-  ```bash
-  python -m venv venv
-  source venv/bin/activate
-  pip install pandas gseapy matplotlib matplotlib-venn openpyxl
-  ```
 - Versione Python raccomandata: 3.8+
 
 ---
@@ -132,13 +116,3 @@ Questo set di script è pensato per essere usato passo‑passo:
 ## Contatti / Licenza
 - Autore: vedi cronologia commit del repository.  
 - Licenza: aggiungi qui la licenza desiderata (es. MIT) se vuoi distribuire pubblicamente gli script.
-
----
-
-Se vuoi, posso:
-- applicare direttamente questo README al repository e creare il commit; oppure
-- generare versioni alternative (più sintetica o con badge e immagini di esempio);
-- aggiornare la sezione "Contaminanti" con una tabella esplicita dei geni attualmente esclusi.
-
-Dimmi quale opzione preferisci e procedo.
-```
