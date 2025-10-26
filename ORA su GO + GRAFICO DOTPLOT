@@ -1,0 +1,103 @@
+import gseapy as gp
+import pandas as pd
+import matplotlib.pyplot as plt
+import tkinter as tk
+from tkinter import filedialog
+import numpy as np
+import seaborn as sns
+import textwrap
+
+#SCRIPT PER ESEGUIRE ORA SU GO (BP, MF, CC) E VISUALIZZARE I RISULTATI CON DOTPLOT
+# --------------------------
+# 1. SELEZIONA E LEGGI IL FILE .rnk/.txt
+# --------------------------
+root = tk.Tk()
+root.withdraw()
+rnk_file = filedialog.askopenfilename(
+    title="Seleziona la lista di geni stile .rnk (.txt)",
+    filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
+)
+if not rnk_file:
+    print("Nessun file selezionato. Uscita.")
+    exit()
+
+# Leggi solo la prima colonna (gene name), prendi i primi 100
+df = pd.read_csv(rnk_file, sep=None, engine="python", header=None)
+gene_list = df.iloc[:100, 0].astype(str).tolist()
+
+# --------------------------
+# 2. ESEGUE ORA SU GO (BP, MF, CC)
+# --------------------------
+enr = gp.enrichr(
+    gene_list=gene_list,
+    gene_sets=[
+        "GO_Biological_Process_2025",
+        "GO_Molecular_Function_2025",
+        "GO_Cellular_Component_2025"
+    ],
+    organism="Mouse",
+    cutoff=0.05
+)
+res = enr.results
+
+def wrap_labels(series, width=30):
+    """Manda a capo i testi lunghi in una Series"""
+    return series.apply(lambda x: "\n".join(textwrap.wrap(str(x), width)))
+
+# --------------------------
+# 3. BAR PLOT PER OGNI GENE SET
+# --------------------------
+for go_type, title in [
+    ("GO_Biological_Process_2025", "GO BP"),
+    ("GO_Molecular_Function_2025", "GO MF"),
+    ("GO_Cellular_Component_2025", "GO CC")
+]:
+    subset = res[res["Gene_set"] == go_type].sort_values("Adjusted P-value").head(10)
+    if subset.empty:
+        print(f"Nessun risultato per {go_type}")
+        continue
+
+    # Rimuovi i codici GO dai termini
+    subset["Term"] = subset["Term"].str.replace(r"\s*\(GO:\d+\)", "", regex=True)    
+
+    # --- DOTPLOT ---
+    # Calcola GeneRatio dalla colonna Overlap (es: "5/100" -> 0.05)
+    subset["GeneRatio"] = subset["Overlap"].str.extract(r"(\d+)/(\d+)").astype(float).apply(lambda x: x[0]/x[1] if x[1]>0 else 0, axis=1)
+    # Calcola BackgroundRatio dalla colonna "Old Overlap" (es: "5/2000" -> 0.0025) se presente, altrimenti usa la seconda cifra di Overlap rispetto a un background noto
+    if "Old Overlap" in subset.columns:
+        subset["BackgroundRatio"] = subset["Old Overlap"].str.extract(r"(\d+)/(\d+)").astype(float).apply(lambda x: x[0]/x[1] if x[1]>0 else 0, axis=1)
+    else:
+        # fallback: usa la seconda cifra di Overlap come background totale
+        subset["BackgroundRatio"] = subset["Overlap"].str.extract(r"\d+/(\d+)").astype(float)[0].apply(lambda x: 1/x if x > 0 else 0)
+
+    # Calcola Enrichment
+    subset["Enrichment"] = subset["GeneRatio"] / subset["BackgroundRatio"]
+    # Ordina i termini per enrichment (opzionale)
+    subset = subset.sort_values("Enrichment", ascending=False)
+    # Applica il wrapping ai termini GO
+    subset["Term_wrapped"] = wrap_labels(subset["Term"], width=30)
+
+    plt.figure(figsize=(8, 5))
+    scatter = sns.scatterplot(
+        data=subset,
+        x="Enrichment",
+        y="Term_wrapped",
+        size="GeneRatio",
+        hue=-np.log10(subset["Adjusted P-value"]),
+        sizes=(75, 450),
+        palette="viridis",
+        legend="brief"
+    )
+    plt.xlabel("Enrichment")
+    plt.ylabel("GO Term")
+    plt.title(f"{title}")
+
+    # Rimuovi la legenda automatica e aggiungi la colorbar
+    norm = plt.Normalize(-np.log10(subset["Adjusted P-value"]).min(), -np.log10(subset["Adjusted P-value"]).max())
+    sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
+    sm.set_array([])
+    cbar = plt.colorbar(sm, ax=plt.gca(), label="-log10(Adjusted P-value)")
+    scatter.legend_.remove()
+
+    plt.tight_layout()
+    plt.show()
